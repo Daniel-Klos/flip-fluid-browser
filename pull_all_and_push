@@ -1,9 +1,0 @@
-cp /mnt/c/Users/dklos/OneDrive/Desktop/single_thread_flip_fluid/index.js .
-cp /mnt/c/Users/dklos/OneDrive/Desktop/single_thread_flip_fluid/index.html .
-cp /mnt/c/Users/dklos/OneDrive/Desktop/single_thread_flip_fluid/index.wasm .
-cp /mnt/c/Users/dklos/OneDrive/Desktop/single_thread_flip_fluid/index.data .
-
-git add index.js index.html index.wasm index.data
-git commit -m "updating all"
-
-git push
