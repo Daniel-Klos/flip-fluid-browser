@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -e
+
+SRC=/mnt/c/Users/dklos/OneDrive/Desktop/single_thread_flip_fluid
+REPO_DIR=/home/personal_projects/flip-fluid-browser
+REPO_URL=https://github.com/Daniel-Klos/flip-fluid-browser.git
+
+# remove the old built page (no-op after the first run); .nojekyll is kept
+git rm -q --ignore-unmatch index.html index.js index.wasm index.data
+
+# sync source (--delete mirrors your project, minus node_modules/dist)
+rsync -av --delete --exclude node_modules --exclude dist "$SRC/frontend/" frontend/
+rsync -av --delete "$SRC/src/" src/
+cp "$SRC/build.bat" .
+cp "$SRC"/*.png .
+
+printf "node_modules\ndist\n" > .gitignore
+
+# GitHub Actions workflow
+mkdir -p .github/workflows
+cat > .github/workflows/deploy.yml <<'EOF'
+name: Deploy to Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+EOF
+
+git add -A
+if git diff --cached --quiet; then
+  echo "Nothing to commit"
+else
+  git commit -m "${1:-Update project}"
+  git push
+fi

@@ -1,0 +1,67 @@
+html, body, #root { margin: 0; padding: 0; height: 100%}
+body { display: block; background: #111; color: #eee; font-family: arial, sans-serif; }
+
+canvas#canvas {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: black;
+}
+
+.stage {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* vertical centering */
+  overflow: hidden;
+  background: #111;
+}
+
+.menu {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  width: 340px;
+  background: rgba(30, 30, 30, 0.92);
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.menu-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-head:hover { background: rgba(255, 255, 255, 0.05); }
+
+.menu-chev { display: inline-block; font-size: 12px; transition: transform 0.25s ease; }
+.menu-chev.open { transform: rotate(90deg); }
+
+/* smooth open/close: animate the grid row from 0fr to 1fr */
+.menu-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+.menu-body.open { grid-template-rows: 1fr; }
+.menu-inner { overflow: hidden; min-height: 0; }
+
+/* scrolling lives on an inner element so it doesn't fight the collapse animation */
+.menu-scroll {
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  border-top: 1px solid #333;
+}

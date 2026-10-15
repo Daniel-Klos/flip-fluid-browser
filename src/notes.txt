@@ -1,0 +1,17 @@
+// order of need of implementation/optimization:
+    // 1) implement IDP and affine transforms
+    // 2) implement Multi Grid, then MGPCG
+    // 4) add a way to switch between particle view and liquid glass view
+    // 5) Implement RK
+    // 7) DDA raycasting & making sure that particle-particle collisions dont push particles into obstacles
+    // 8) extrapolation from solid cells
+
+AFTER 1, 1.5, and 2 are implemented, start profiling to see where performance can be improved.
+    look at how you do it in the SFML version
+
+
+PCG with RBSOR as a preconditioner makes super cool high frequency patterns
+fluid_handler.pressure_solver.projectPCG([&]() {
+    fluid_handler.pressure_solver.projectRedBlackSORMulti(3); // around 2-6 iterations for preconditioner
+});
+

@@ -1,0 +1,21 @@
+emcc -o frontend/public/sim.js src/main.cpp src/obstacle_rendering.cpp src/fluid_rendering.cpp ^
+  -Wall -std=c++20 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result ^
+  -O3 -ffast-math -g0 ^
+  -I. -I C:/raylib/raylib/src -I C:/raylib/raylib/src/external ^
+  -L. -L C:/raylib/raylib/src ^
+  -s USE_GLFW=3 ^
+  -s ALLOW_MEMORY_GROWTH=1 ^
+  -s ASSERTIONS=0 ^
+  -s SAFE_HEAP=0 ^
+  -s WASM_BIGINT=1 ^
+  -msimd128 ^
+  -mbulk-memory ^
+  --preload-file white_circle.png ^
+  --preload-file white_square_black_edges.png ^
+  --preload-file gray_square.png ^
+  C:/raylib/raylib/src/web/libraylib.a ^
+  -DPLATFORM_WEB ^
+  -s MODULARIZE=1 ^
+  -s EXPORT_NAME=createSim ^
+  -s "EXPORTED_FUNCTIONS=[\"_free\",\"_malloc\",\"_main\"]" ^
+  -s EXPORTED_RUNTIME_METHODS=ccall
