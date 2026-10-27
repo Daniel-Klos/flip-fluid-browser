@@ -50,6 +50,14 @@ extern "C" {
         g_scene_handler->fluid_attributes.flipRatio = set;
     }
     EMSCRIPTEN_KEEPALIVE
+    float getApicRatio() {
+        return g_scene_handler->fluid_attributes.apicRatio;
+    }
+    EMSCRIPTEN_KEEPALIVE
+    void setApicRatio(float set) {
+        g_scene_handler->fluid_attributes.apicRatio = set;
+    }
+    EMSCRIPTEN_KEEPALIVE
     void setGravityX(float set) {
         g_scene_handler->fluid_attributes.gravityX = set;
     }
@@ -123,8 +131,9 @@ int main()
     float gravityX = 0.f;
     int gridNumX = 258; // gridNumX must be a power of 2, +2
     ///int gridNumY = 180; gridNumX / 2 + 1;  <-- use for when you implement multigrid
-    float flipRatio = 0.9f; // 0.9f
-    float vorticityStrength = 0.f;
+    float flipRatio = 0.3f; // 0.9f
+    float apicRatio = 1.f;
+    float vorticityStrength = 30.f;
     int maxFps = 120;
 
     SetTraceLogLevel(LOG_NONE);
@@ -134,17 +143,18 @@ int main()
 
     InitWindow(WIDTH, HEIGHT, "Flip Fluid");
 
-    FluidState *fluid_attributes = new FluidState(numParticles, gridNumX, vorticityStrength, flipRatio, gravityX, gravityY, WIDTH, HEIGHT);
+    FluidState *fluid_attributes = new FluidState(numParticles, gridNumX, vorticityStrength, flipRatio, apicRatio, gravityX, gravityY, WIDTH, HEIGHT);
 
     SceneHandler *scene_handler = new SceneHandler(*fluid_attributes, maxFps);
 
     g_scene_handler = scene_handler;
 
     #ifdef __EMSCRIPTEN__
-        emscripten_request_animation_frame_loop(emscripten_loop, nullptr);        
+        emscripten_request_animation_frame_loop(emscripten_loop, nullptr);
     #else
         while(!WindowShouldClose()) {
             scene_handler->simulate(0, nullptr);
+            break;
         }
     #endif
 

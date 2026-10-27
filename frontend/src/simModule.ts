@@ -6,6 +6,8 @@ export type SimModule = {
   _getVorticityStrength(): number;
   _setFlipRatio(v: number): void;
   _getFlipRatio(): number;
+  _setApicRatio(v: number): void;
+  _getApicRatio(): number;
   _setGravityX(v: number): void;
   _getGravityX(): number;
   _setGravityY(v: number): void;

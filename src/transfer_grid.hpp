@@ -119,8 +119,8 @@ private:
 
                 int matIdx = 2 * pIdx;
 
-                float C1 = C[matIdx];
-                float C2 = C[matIdx + 1];
+                float C1 = C[matIdx] * fas.apicRatio;
+                float C2 = C[matIdx + 1] * fas.apicRatio;
 
                 float affinepvBottomLeft = pv + 
                                         C1 * dxLeft + 
@@ -236,67 +236,35 @@ private:
                                    validBottomLeftWeight  * bottomLeftWeight + 
                                    validBottomRightWeight * bottomRightWeight;
 
-                float picV;
-                float corr;
-                float flipV;
-
                 if (div > 0.f) {
-                    picV = (validTopLeftWeight     * topLeftWeight     * gridVel_topLeft + 
-                            validTopRightWeight    * topRightWeight    * gridVel_topRight + 
-                            validBottomLeftWeight  * bottomLeftWeight  * gridVel_bottomLeft + 
-                            validBottomRightWeight * bottomRightWeight * gridVel_bottomRight
-                            ) / div;
+                    const float picV = (validTopLeftWeight     * topLeftWeight     * gridVel_topLeft +
+                            validTopRightWeight    * topRightWeight    * gridVel_topRight +
+                            validBottomLeftWeight  * bottomLeftWeight  * gridVel_bottomLeft +
+                            validBottomRightWeight * bottomRightWeight * gridVel_bottomRight) / div;
+                    
+                    const float corr = (validTopLeftWeight     * topLeftWeight     * (gridVel_topLeft     - prevGrid[topLeftCell]) +
+                                        validTopRightWeight    * topRightWeight    * (gridVel_topRight    - prevGrid[topRightCell]) +
+                                        validBottomLeftWeight  * bottomLeftWeight  * (gridVel_bottomLeft  - prevGrid[bottomLeftCell]) +
+                                        validBottomRightWeight * bottomRightWeight * (gridVel_bottomRight - prevGrid[bottomRightCell])) / div;
 
-                    corr = (validTopLeftWeight     * topLeftWeight     * (gridVel_topLeft     - prevGrid[topLeftCell]) + 
-                            validTopRightWeight    * topRightWeight    * (gridVel_topRight    - prevGrid[topRightCell]) + 
-                            validBottomLeftWeight  * bottomLeftWeight  * (gridVel_bottomLeft  - prevGrid[bottomLeftCell]) + 
-                            validBottomRightWeight * bottomRightWeight * (gridVel_bottomRight - prevGrid[bottomRightCell])
-                            ) / div;
-
-                    flipV = pv + corr;
+                    const float flipV = pv + corr;
+                    
                     fas.velocities[i + component] = (1.f - fas.flipRatio) * picV + fas.flipRatio * flipV;
+                    
+                    const float fx = (px - x0 * fas.cellSpacing) * invSpacing;
+                    const float fy = (py - y0 * fas.cellSpacing) * invSpacing;
+                    
+                    const float v00 = validTopLeftWeight     ? gridVel_topLeft     : picV;
+                    const float v10 = validTopRightWeight    ? gridVel_topRight    : picV;
+                    const float v01 = validBottomLeftWeight  ? gridVel_bottomLeft  : picV;
+                    const float v11 = validBottomRightWeight ? gridVel_bottomRight : picV;
+                    
+                    C[i]     = ((fy - 1.f) * v00 + (1.f - fy) * v10 - fy * v01 + fy * v11) * invSpacing;
+                    C[i + 1] = ((fx - 1.f) * v00 - fx * v10 + (1.f - fx) * v01 + fx * v11) * invSpacing;
+                } else {
+                    C[i] = C[i + 1] = 0.f;
                 }
-
-                /*float topLeftWeightDerivativeX, topRightWeightDerivativeX, bottomLeftWeightDerivativeX, bottomRightWeightDerivativeX;
-                float topLeftWeightDerivativeY, topRightWeightDerivativeY, bottomLeftWeightDerivativeY, bottomRightWeightDerivativeY;
-
-                fas.WeightGradient(px, py, x0, y0, topLeftWeightDerivativeX, topLeftWeightDerivativeY);
-                fas.WeightGradient(px, py, x1, y0, topRightWeightDerivativeX, topRightWeightDerivativeY);
-                fas.WeightGradient(px, py, x0, y1, bottomLeftWeightDerivativeX, bottomLeftWeightDerivativeY);
-                fas.WeightGradient(px, py, x1, y1, bottomRightWeightDerivativeX, bottomRightWeightDerivativeY);*/
-
-                /*float v00 = gridVel_topLeft     * validTopLeftWeight;
-                float v10 = gridVel_topRight    * validTopRightWeight;
-                float v01 = gridVel_bottomLeft  * validBottomLeftWeight;
-                float v11 = gridVel_bottomRight * validBottomRightWeight;
-
-                float fy = py - y0 * fas.cellSpacing;
-                float fx = px - x0 * fas.cellSpacing;
-
-                float f00X = fy - 1.f;
-                float f00Y = fx - 1.f;
-
-                float f10X = 1.f - fy;
-                float f10Y = -fx;
-
-                float f01X = -fy;
-                float f01Y = 1.f - fx;
-
-                float f11X = fy;
-                float f11Y = fx;
-
-                C[i] = (f00X * v00 +
-                        f10X * v01 +
-                        f01X * v10 +
-                        f11X * v11);
-
-                C[i + 1] = (f00Y * v00 +
-                            f10Y * v01 +
-                            f01Y * v10 +
-                            f11Y * v11);*/
-
-                C[i]     *= fas.invSpacing;
-                C[i + 1] *= fas.invSpacing;
+                //std::cout << "C[" << i << "]: " << C[i] << ", " << "C[" << i + 1 << "]: " << C[i + 1] << " | apic ratio: 1.0" << ", flip ratio: " << fas.flipRatio << std::endl;
             }
         }
     }

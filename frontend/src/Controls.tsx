@@ -99,7 +99,8 @@ function SliderRow(props: {
 
 export default function Controls({ sim }: { sim: SimModule | null }) {
   const [vorticity, setVorticity] = useState(0.0);
-  const [flip, setFlip] = useState(0.9);
+  const [flip, setFlip] = useState(0.0);
+  const [visc, setVisc] = useState(1);  
   const [gravX, setGravX] = useState(0.0);
   const [gravY, setGravY] = useState(-9.81);
   const [brush, setBrush] = useState(50);
@@ -114,6 +115,7 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
     if (!sim) return;
     setVorticity(sim._getVorticityStrength());
     setFlip(sim._getFlipRatio());
+    setVisc(1 - sim._getApicRatio());
     setGravX(sim._getGravityX());
     setGravY(sim._getGravityY());
     setBrush(sim._getBrushSize());
@@ -179,7 +181,9 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
         </div>
         <SliderRow label="Vorticity" min={0} max={500} step={0.1} value={vorticity} disabled={disabled}
           onChange={(v) => { setVorticity(v); sim?._setVorticityStrength(v); }} />
-        <SliderRow label="FLIP Ratio" min={0} max={1} step={0.01} value={flip} disabled={disabled}
+        <SliderRow label="Viscosity" min={0} max={1} step={0.01} value={visc} disabled={disabled}
+          onChange={(v) => { setVisc(v); sim?._setApicRatio(1 - v); }} />
+        <SliderRow label="Liveliness" min={0} max={1} step={0.01} value={flip} disabled={disabled}
           onChange={(v) => { setFlip(v); sim?._setFlipRatio(v); }} />
         <SliderRow label="Gravity X" min={-40} max={40} step={0.1} value={gravX} disabled={disabled}
           onChange={(v) => { setGravX(v); sim?._setGravityX(v); }} />

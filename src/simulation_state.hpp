@@ -47,6 +47,7 @@ struct FluidState {
 
     float vorticityStrength;
     float flipRatio;
+    float apicRatio;
 
     float gravityX;
     float gravityY;
@@ -73,7 +74,23 @@ struct FluidState {
 
     Tool activeTool = Tool::DragObject;
 
-    FluidState(int num_particles_, int numX_, float vorticityStrength_, float flipRatio_, float gravityX_, float gravityY_, float simWIDTH, float simHEIGHT): num_particles(num_particles_), numX(numX_), vorticityStrength(vorticityStrength_), flipRatio(flipRatio_), gravityX(gravityX_), gravityY(gravityY_), frame_context(simWIDTH, simHEIGHT) {
+    FluidState(int num_particles_, 
+            int numX_, 
+            float vorticityStrength_, 
+            float flipRatio_, 
+            float apicRatio_, 
+            float gravityX_, 
+            float gravityY_, 
+            float simWIDTH, 
+            float simHEIGHT):   num_particles(num_particles_), 
+                                numX(numX_), 
+                                vorticityStrength(vorticityStrength_), 
+                                flipRatio(flipRatio_), 
+                                apicRatio(apicRatio_), 
+                                gravityX(gravityX_), 
+                                gravityY(gravityY_), 
+                                frame_context(simWIDTH, simHEIGHT) 
+        {
 
         cellSpacing = frame_context.WIDTH / numX;
         halfSpacing = cellSpacing * 0.5;
@@ -148,24 +165,6 @@ struct FluidState {
         float dy = 1.f - std::abs((py - gy)) * invSpacing;
 
         return dx * dy;
-    }
-
-    void WeightGradientFD(float px, float py, float gx, float gy, float &gradX, float &gradY) {
-        float eps = cellSpacing * 0.001f;
-
-        gradX = (Weight(px + eps, py, gx, gy) - Weight(px - eps, py, gx, gy)) / (2 * eps);
-        gradY = (Weight(px, py + eps, gx, gy) - Weight(px, py - eps, gx, gy)) / (2 * eps);
-    }
-
-    void WeightGradient(float px, float py, float gx, float gy, float &gradx, float &grady) {
-        gx *= cellSpacing;
-        gy *= cellSpacing;
-
-        float dx = (px - gx) * invSpacing;
-        float dy = (py - gy) * invSpacing;
-
-        gradx = -sign(dx) * (1.f - abs(dy)) * invSpacing;
-        grady = -sign(dy) * (1.f - abs(dx)) * invSpacing;
     }
 
     float samplePhi(Vector2 pos) {
@@ -384,6 +383,14 @@ struct FluidState {
 
     void setFlipRatio(float set) {
         this->flipRatio = set;
+    }
+
+    float getApicRatio() {
+        return this->apicRatio;
+    }
+
+    void setApicRatio(float set) {
+        this->apicRatio = set;
     }
 
     void setGravityX(float set) {

@@ -279,7 +279,13 @@ void ObstacleRenderer::drawPencil() {
         pencilMesh.UpdatePositionMeshBuffers(pencilVertices);
     }
 
-    int currPencilColor = fluid_attributes.activeTool == Tool::AttractObject ? 2 : 1;
+
+    int currPencilColor = 0; 
+    if (fluid_attributes.activeTool == Tool::DrawObject) {
+        currPencilColor = 2;
+    } else if (fluid_attributes.activeTool == Tool::EraseObject) {            // erasing
+        currPencilColor = 1;
+    }
     if (pencilColor != currPencilColor) {
         pencilColor = currPencilColor;
         UpdatePencilMeshColorMulti();
