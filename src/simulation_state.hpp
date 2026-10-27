@@ -132,7 +132,7 @@ struct FluidState {
         int highNum = num_particles / wideNum;
 
         float starting_px = radius + cellSpacing + 2;
-        float starting_py = (frame_context.HEIGHT - (radius * separation * highNum)) / 2 + radius;
+        float starting_py = radius + cellSpacing;
 
         float px = starting_px;
         float py = starting_py;
