@@ -67,19 +67,6 @@ public:
         collisions.resize(fas.num_particles);
     }
 
-    void createRandomPositions() {
-        std::uniform_int_distribution<int> randWidth(fas.radius, fas.frame_context.WIDTH - fas.radius);
-        std::uniform_int_distribution<int> randHeight(fas.radius, fas.frame_context.HEIGHT - fas.radius);
-
-        std::random_device rd;
-        std::mt19937 mt(rd());
-
-        for (int i = 0; i < fas.num_particles; ++i) {
-            fas.positions[i * 2] = randWidth(mt);
-            fas.positions[i * 2 + 1] = randHeight(mt);
-        }
-    }
-
     void ApplyBodyForces() {
         if (fas.activeTool == Tool::DragObject) {                                                          // dragging
             includeDragObject();
@@ -87,9 +74,6 @@ public:
             includeForceObject(forceObjectStrength * 4);                             // cares this works
         } if (fas.activeTool == Tool::AttractObject && fas.frame_context.mouseDown) { // force push
             includeForceObject(-forceObjectStrength); // pushing, 1000
-        }
-        if (fluid_renderer.getRenderMode() == 3 && fas.fireActive) {     // applying buoyant force to high temperature partiles
-            makeFire();
         }
         if (fluid_renderer.getRenderMode() == 3) {                              // ground->particle thermal conducting. I just lump it in here but it's not an actual force
             heatGround();                                                          // note that particle->particle thermal conducting is handled in solveCollisions()
@@ -107,6 +91,10 @@ public:
         MarkAirAndFluidCells();
         // If there's ever a bug where the fluid looks like its popping/unstable, its probably because rest density is not set correctly here
         density_solver.ComputeGridDensityOnly();
+
+        if (fluid_renderer.getRenderMode() == 3 && fas.fireActive) {     // applying buoyant force to high temperature partiles
+            makeFire();
+        }
 
         //MarkAirAndFluidCells();
         //density_solver.ProjectDensity();

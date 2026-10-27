@@ -126,20 +126,21 @@ int main()
     // vorticitystrength is how strong vorticity confinement forces are if you choose to include that in the sim 
     // maxFps sets the deltaTime for the simulation and the framerate for the window
 
+    int WIDTH = 2400; // 2400, or 2322; // multiple of gridNumX, use for multigrid
+    int HEIGHT = 1300; // 1300, or gridNumY * WIDTH / gridNumX; <-- use for when you implement multigrid
+
+    int gridNumX = 258; // gridNumX must be a power of 2, +2
+    ///int gridNumY = 180; gridNumX / 2 + 1;  <-- use for when you implement multigrid
+
     int numParticles = 30000; // 30000 --- start with a kinda large number so that good density sample is taken at the start of the simulation
     float gravityY = 9.8f; // 5500
     float gravityX = 0.f;
-    int gridNumX = 258; // gridNumX must be a power of 2, +2
-    ///int gridNumY = 180; gridNumX / 2 + 1;  <-- use for when you implement multigrid
     float flipRatio = 0.3f; // 0.9f
     float apicRatio = 1.f;
     float vorticityStrength = 30.f;
     int maxFps = 120;
 
     SetTraceLogLevel(LOG_NONE);
-
-    int WIDTH = 2400; // 2400, or 2322; // multiple of gridNumX, use for multigrid
-    int HEIGHT = 1300; // 1300, or gridNumY * WIDTH / gridNumX; <-- use for when you implement multigrid
 
     InitWindow(WIDTH, HEIGHT, "Flip Fluid");
 

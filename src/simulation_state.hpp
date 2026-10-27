@@ -57,9 +57,9 @@ struct FluidState {
 
     bool fireActive = false;
     std::vector<float> temperatures;
-    float groundConductivity = 20000.f;  // how quickly the ground transfers heat to the particles
+    float groundConductivity = 10000.f;  // how quickly the ground transfers heat to the particles
     float interConductivity = 10000.f;    // how quickly particles transfer heat between themselves
-    float fireStrength = 75.f;         // how quickly particles accelerate upwards due to heat
+    float fireStrength = 50.f;         // how quickly particles accelerate upwards due to heat
     float tempDiffusion = 50.f;        // how quickly particles lose heat
 
     //std::vector<bool> debug; // for any debug condition you want, just set pIdx = 1
