@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
+#include <algorithm>
 
 enum class Tool : int { DragObject, AttractObject, RepelObject, SpawnObject, DeleteObject, DrawObject, EraseObject, ZoomObject };
 

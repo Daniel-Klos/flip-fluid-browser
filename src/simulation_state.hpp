@@ -46,11 +46,14 @@ struct FluidState {
     float particleRestDensity = 0.f; // INITIALIZE TO 0.f
 
     float vorticityStrength;
+    float surfTenStrength;
+
     float flipRatio;
     float apicRatio;
 
     float gravityX;
     float gravityY;
+    float gravityMag;
 
     bool stop = false;
     bool step = false; 
@@ -76,7 +79,8 @@ struct FluidState {
 
     FluidState(int num_particles_, 
             int numX_, 
-            float vorticityStrength_, 
+            float vorticityStrength_,
+            float surfTenStrength_,
             float flipRatio_, 
             float apicRatio_, 
             float gravityX_, 
@@ -84,12 +88,14 @@ struct FluidState {
             float simWIDTH, 
             float simHEIGHT):   num_particles(num_particles_), 
                                 numX(numX_), 
-                                vorticityStrength(vorticityStrength_), 
+                                vorticityStrength(vorticityStrength_),
+                                surfTenStrength(surfTenStrength_),
                                 flipRatio(flipRatio_), 
                                 apicRatio(apicRatio_), 
                                 gravityX(gravityX_), 
-                                gravityY(gravityY_), 
-                                frame_context(simWIDTH, simHEIGHT) 
+                                gravityY(gravityY_),
+                                gravityMag(std::sqrt(gravityX * gravityX + gravityY * gravityY)),
+                                frame_context(simWIDTH, simHEIGHT)
         {
 
         cellSpacing = frame_context.WIDTH / numX;

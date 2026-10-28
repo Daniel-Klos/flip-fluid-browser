@@ -60,6 +60,10 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void setGravityX(float set) {
         g_scene_handler->fluid_attributes.gravityX = set;
+
+        float gx = g_scene_handler->fluid_attributes.gravityX;
+        float gy = g_scene_handler->fluid_attributes.gravityY;
+        g_scene_handler->fluid_attributes.gravityMag = std::sqrt(gx * gx + gy * gy);
     }
     EMSCRIPTEN_KEEPALIVE
     float getGravityX() {
@@ -68,6 +72,10 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void setGravityY(float set) {
         g_scene_handler->fluid_attributes.gravityY = set;
+
+        float gx = g_scene_handler->fluid_attributes.gravityX;
+        float gy = g_scene_handler->fluid_attributes.gravityY;
+        g_scene_handler->fluid_attributes.gravityMag = std::sqrt(gx * gx + gy * gy);
     }
     EMSCRIPTEN_KEEPALIVE
     float getGravityY() {
@@ -113,6 +121,14 @@ extern "C" {
     float getForceStrength() { 
         return g_scene_handler->fluid_handler.forceObjectStrength; 
     }
+    EMSCRIPTEN_KEEPALIVE
+    void setSurfaceTension(float set) { 
+        g_scene_handler->fluid_handler.surface_tension.setSurfaceTension(set); 
+    }
+    EMSCRIPTEN_KEEPALIVE
+    float getSurfaceTension() { 
+        return g_scene_handler->fluid_handler.surface_tension.getSurfaceTension(); 
+    }
 }
 
 int main() 
@@ -133,18 +149,19 @@ int main()
     ///int gridNumY = 180; gridNumX / 2 + 1;  <-- use for when you implement multigrid
 
     int numParticles = 30000; // 30000 --- start with a kinda large number so that good density sample is taken at the start of the simulation
-    float gravityY = 9.8f; // 5500
+    float gravityY = 5500.f; // 5500
     float gravityX = 0.f;
     float flipRatio = 0.3f; // 0.9f
     float apicRatio = 1.f;
     float vorticityStrength = 30.f;
+    float surfTenStrength = 20.f;
     int maxFps = 120;
 
     SetTraceLogLevel(LOG_NONE);
 
     InitWindow(WIDTH, HEIGHT, "Flip Fluid");
 
-    FluidState *fluid_attributes = new FluidState(numParticles, gridNumX, vorticityStrength, flipRatio, apicRatio, gravityX, gravityY, WIDTH, HEIGHT);
+    FluidState *fluid_attributes = new FluidState(numParticles, gridNumX, vorticityStrength, surfTenStrength, flipRatio, apicRatio, gravityX, gravityY, WIDTH, HEIGHT);
 
     SceneHandler *scene_handler = new SceneHandler(*fluid_attributes, maxFps);
 

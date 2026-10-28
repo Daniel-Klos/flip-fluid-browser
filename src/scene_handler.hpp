@@ -112,8 +112,7 @@ struct SceneHandler {
 
         HandleUserInteraction();
             
-        if (!fluid_attributes.stop || fluid_attributes.step) {
-            std::cout << "true" << std::endl;
+        if (!fluid_attributes.stop || fluid_attributes.step) { 
             std::copy(begin(fluid_attributes.positions), end(fluid_attributes.positions), begin(fluid_attributes.renderPositions));
             fluid_handler.UpdateEnvironment();
             fluid_attributes.step = false;

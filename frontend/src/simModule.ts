@@ -4,6 +4,8 @@ export type SimModule = {
   _requestStep(): void;
   _setVorticityStrength(v: number): void;
   _getVorticityStrength(): number;
+  _setSurfaceTension(v: number): void;
+  _getSurfaceTension(): number;
   _setFlipRatio(v: number): void;
   _getFlipRatio(): number;
   _setApicRatio(v: number): void;

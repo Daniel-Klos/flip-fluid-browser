@@ -99,6 +99,7 @@ function SliderRow(props: {
 
 export default function Controls({ sim }: { sim: SimModule | null }) {
   const [vorticity, setVorticity] = useState(0.0);
+  const [surf_ten, setSurfTen] = useState(20.0);
   const [flip, setFlip] = useState(0.0);
   const [visc, setVisc] = useState(1);  
   const [gravX, setGravX] = useState(0.0);
@@ -110,14 +111,17 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
   const [mode, setMode] = useState(0);
   const [object, setObject] = useState(0);
 
+  const norm_g = 9.8 / 5500.0
+
   // Read the sim's real defaults once loaded
   useEffect(() => {
     if (!sim) return;
     setVorticity(sim._getVorticityStrength());
+    setSurfTen(sim._getSurfaceTension());
     setFlip(sim._getFlipRatio());
     setVisc(1 - sim._getApicRatio());
-    setGravX(sim._getGravityX());
-    setGravY(sim._getGravityY());
+    setGravX(sim._getGravityX() * norm_g);
+    setGravY(sim._getGravityY() * norm_g);
     setBrush(sim._getBrushSize());
     setForce(sim._getForceStrength());
   }, [sim]);
@@ -181,14 +185,16 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
         </div>
         <SliderRow label="Vorticity" min={0} max={500} step={0.1} value={vorticity} disabled={disabled}
           onChange={(v) => { setVorticity(v); sim?._setVorticityStrength(v); }} />
+        <SliderRow label="Surface Tension" min={0} max={50} step={0.1} value={surf_ten} disabled={disabled}
+          onChange={(v) => { setSurfTen(v); sim?._setSurfaceTension(v); }} />
         <SliderRow label="Viscosity" min={0} max={1} step={0.01} value={visc} disabled={disabled}
           onChange={(v) => { setVisc(v); sim?._setApicRatio(1 - v); }} />
         <SliderRow label="Liveliness" min={0} max={1} step={0.01} value={flip} disabled={disabled}
           onChange={(v) => { setFlip(v); sim?._setFlipRatio(v); }} />
         <SliderRow label="Gravity X" min={-40} max={40} step={0.1} value={gravX} disabled={disabled}
-          onChange={(v) => { setGravX(v); sim?._setGravityX(v); }} />
+          onChange={(v) => { setGravX(v); sim?._setGravityX(v / norm_g); }} />
         <SliderRow label="Gravity Y" min={-40} max={40} step={0.1} value={gravY} disabled={disabled}
-          onChange={(v) => { setGravY(v); sim?._setGravityY(v); }} />
+          onChange={(v) => { setGravY(v); sim?._setGravityY(v / norm_g); }} />
       </Section>
     </div>
   );

@@ -13,6 +13,7 @@
 #include "transfer_grid.hpp"
 #include "fluid_rendering.hpp"
 #include "scene_renderer.hpp"
+#include "surface_tension.hpp"
 #include "utils.hpp"
 
 class FluidHandler {
@@ -38,18 +39,19 @@ public:
     PressureSolver pressure_solver;
     IDPSolver density_solver;
     TransferGrid transfer_grid;
+    SurfaceTension surface_tension;
 
     std::vector<int> collisions;
 
     Color objectColor = {255, 255, 255, 255};
 
-    float norm_g = 5500.f / 9.8f;
-
-    FluidHandler(FluidState& fluid_attributes, FluidRenderer &fr): fas(fluid_attributes),
-                                                      fluid_renderer(fr),
-                                                      pressure_solver(fluid_attributes),
-                                                      density_solver(fluid_attributes),
-                                                      transfer_grid(fluid_attributes)
+    FluidHandler(FluidState& fluid_attributes, FluidRenderer &fr): 
+        fas(fluid_attributes),
+        fluid_renderer(fr),
+        pressure_solver(fluid_attributes),
+        density_solver(fluid_attributes),
+        transfer_grid(fluid_attributes),
+        surface_tension(fluid_attributes)
     {
         
         this->moveDist = 2 * fas.radius;
@@ -103,6 +105,8 @@ public:
         transfer_grid.TransferToGrid();
 
         ApplyBodyForces();
+
+        surface_tension.Apply();
         
         pressure_solver.SolvePressure();
 
@@ -113,8 +117,8 @@ public:
         for (int i = 0; i < fas.num_particles; ++i) {
             fas.positions[2 * i] += fas.velocities[2 * i] * fas.frame_context.dt;
             fas.positions[2 * i + 1] += fas.velocities[2 * i + 1] * fas.frame_context.dt;
-            fas.velocities[2 * i] += fas.gravityX * norm_g * fas.frame_context.dt;
-            fas.velocities[2 * i + 1] += fas.gravityY * norm_g * fas.frame_context.dt;
+            fas.velocities[2 * i] += fas.gravityX * fas.frame_context.dt;
+            fas.velocities[2 * i + 1] += fas.gravityY * fas.frame_context.dt;
 
             fas.particleAges[i] = std::min(fas.age_constant, fas.particleAges[i] + 1);
         }
