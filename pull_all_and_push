@@ -67,6 +67,6 @@ git add -A
 if git diff --cached --quiet; then
   echo "Nothing to commit"
 else
-  git commit -m "Implemented MGCG, fixed some bugs (objects not showing up/not resizing correctly)"
+  git commit -m "Fixed warnings in Controls.tsx"
   git push
 fi

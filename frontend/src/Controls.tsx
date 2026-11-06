@@ -7,7 +7,7 @@ const TEMPERATURE_MODE = 3;
 const OBJECTS = ["Drag", "Attract", "Repel", "Spawn Particles", "Delete Particles", "Draw", "Erase", "Zoom / drag"];
 
 // Ids must match FluidRenderer::RenderParam in fluid_rendering.hpp (same order).
-const P = {
+/*const P = {
   THRESHOLD: 0, EDGE_WIDTH: 1, NORMAL_SAMPLE: 2, BEVEL_WIDTH: 3, NORMAL_STRENGTH: 4,
   OUTLINE_WIDTH: 5, OUTLINE_DARKEN: 6, LIGHT_X: 7, LIGHT_Y: 8, LIGHT_Z: 9,
   SHADE_STRENGTH: 10, SPEC_EXP: 11, SPEC_STRENGTH: 12, BRIGHTNESS: 13,
@@ -50,7 +50,7 @@ const COLOR_PARAMS: ParamSpec[] = [
   { id: P.FOAM_B,          label: "Foam B",         min: 0, max: 255, step: 1 },
   { id: P.RESET_RATE,      label: "Foam Fade Rate", min: 0, max: 20,  step: 0.1 },
   { id: P.DIFFUSION_RATIO, label: "Foam Threshold", min: 0, max: 1,   step: 0.01 },
-];
+];*/
 
 function Section(props: { title: string; defaultOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(props.defaultOpen ?? false);
@@ -156,9 +156,6 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
   const [fire, setFire] = useState(false);
   const [mode, setMode] = useState(0);
   const [object, setObject] = useState(0);
-  const [colorOverlap, setColorOverlap] = useState(0);
-  const [radiusMul, setRadiusMul] = useState(0);
-  const [params, setParams] = useState<Record<number, number>>({});
 
   const norm_g = 9.8 / 5500.0
 
@@ -173,11 +170,9 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
     setGravY(sim._getGravityY() * norm_g);
     setBrush(sim._getBrushSize());
     setForce(sim._getForceStrength());
-    setColorOverlap(sim._getColorOverlap());
-    setRadiusMul(sim._getRadiusMul());
-    const next: Record<number, number> = {};
+    /*const next: Record<number, number> = {};
     for (let id = 0; id < P_COUNT; id++) next[id] = sim._getRenderParam(id);
-    setParams(next);
+    setParams(next);*/
   }, [sim]);
 
   // Poll values that C++ hotkeys can change
@@ -195,7 +190,7 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
   const disabled = !sim;
   const blur = (e: React.SyntheticEvent) => (e.currentTarget as HTMLElement).blur();
 
-  const setParam = (id: number, v: number) => {
+  /*const setParam = (id: number, v: number) => {
     setParams((p) => ({ ...p, [id]: v }));
     sim?._setRenderParam(id, v);
   };
@@ -204,7 +199,7 @@ export default function Controls({ sim }: { sim: SimModule | null }) {
       <SliderRow key={p.id} label={p.label} min={p.min} max={p.max} step={p.step}
         value={params[p.id] ?? p.min} disabled={disabled}
         onChange={(v) => setParam(p.id, v)} />
-    ));
+    ));*/
 
   return (
     <div className="controls">
