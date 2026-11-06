@@ -1,6 +1,27 @@
 #include "fluid_rendering.hpp"
 #include <stdexcept>
 #include <cstring>
+#include <rlgl.h>
+#include <algorithm>
+#include <cmath>
+
+/*static const char *kShaderParamNames[FluidRenderer::P_SHADER_COUNT] = {
+    "threshold", "edgeWidth", "normalSample", "bevelWidth", "normalStrength",
+    "outlineWidth", "outlineDarken",
+    "lightX", "lightY", "lightZ",
+    "shadeStrength",
+    "specExp", "specStrength",
+    "brightness"
+};
+
+static const float kShaderParamDefaults[FluidRenderer::P_SHADER_COUNT] = {
+    0.5f, 1.0f, 2.0f, 8.0f, 0.9f,
+    1.5f, 0.45f,
+    -0.6f, 0.55f, 0.58f,
+    1.0f,
+    30.0f, 0.5f,
+    1.0f
+};*/
 
 FluidRenderer::FluidRenderer(FluidState &fas): fluid_attributes(fas)
 {
@@ -11,10 +32,8 @@ FluidRenderer::FluidRenderer(FluidState &fas): fluid_attributes(fas)
 
     ResizeAndUpdateMesh(fluid_attributes.num_particles);
 
-    for (int i = 2; i < 3 * numParticles; i += 3) {
-        particleDiffusionColors[i - 2] = 0;
-        particleDiffusionColors[i - 1] = 0;
-        particleDiffusionColors[i] = 255;
+    for (int i = 0; i < numParticles; ++i) {
+        for (int k = 0; k < 3; ++k) particleDiffusionColors[3 * i + k] = baseColor[k];
     }
 
     if (!FileExists("white_circle.png")) {
@@ -28,11 +47,48 @@ FluidRenderer::FluidRenderer(FluidState &fas): fluid_attributes(fas)
     particleMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = particleTexture;
 
     initializeColorMaps();
+
+    /*radius = fluid_attributes.radius * radiusMul;   // bigger sprites so blobs overlap and merge
+
+    fieldRT = MakeFieldTarget((int)(GetScreenWidth() * fieldScale), (int)(GetScreenHeight() * fieldScale));
+
+    // metaball kernel stored at full 8-bit range; overall strength comes from the material tint below
+    Image img = MakeBlobImage();
+    blobTex = LoadTextureFromImage(img);
+    UnloadImage(img);
+    SetTextureFilter(blobTex, TEXTURE_FILTER_BILINEAR);
+
+    blobMaterial = LoadMaterialDefault();
+    blobMaterial.maps[MATERIAL_MAP_DIFFUSE].texture = blobTex;
+    blobMaterial.maps[MATERIAL_MAP_DIFFUSE].color = Color{colorOverlap, colorOverlap, colorOverlap, colorOverlap};
+    
+    compositeShader = LoadShader(0, "fluid_composite.fs");   // default vertex shader
+    texelLoc = GetShaderLocation(compositeShader, "texel");
+    UpdateTexelUniform();
+
+    for (int id = 0; id < P_SHADER_COUNT; ++id) {
+        paramLoc[id] = GetShaderLocation(compositeShader, kShaderParamNames[id]);
+        params[id] = kShaderParamDefaults[id];
+        SetShaderValue(compositeShader, paramLoc[id], &params[id], SHADER_UNIFORM_FLOAT);
+    }
+
+    // non-shader params mirror the member defaults
+    params[P_FIELD_SCALE]     = fieldScale;
+    params[P_BLOB_POWER]      = blobPower;
+    params[P_RESET_RATE]      = resetRate;
+    params[P_DIFFUSION_RATIO] = diffusionRatio;
+    for (int k = 0; k < 3; ++k) {
+        params[P_BASE_R + k] = baseColor[k];
+        params[P_FOAM_R + k] = foamColor[k];
+    }*/
 }
 
 
 FluidRenderer::~FluidRenderer() {
     UnloadTexture(particleTexture);
+    //UnloadRenderTexture(fieldRT);
+    //UnloadTexture(blobTex);
+    //UnloadShader(compositeShader);
 }
 
 
@@ -155,9 +211,13 @@ void FluidRenderer::UpdateParticlePositionsMulti(int start, int end) {
 
 // colors ------------------------------------------------------------------------------------------------------------
 void FluidRenderer::GetParticleDiffusionColor(int particleIdx, int &r, int &g, int &b) {
-    particleDiffusionColors[3 * particleIdx] = clamp(particleDiffusionColors[3 * particleIdx] - resetRate, 0, 255);
-    particleDiffusionColors[3 * particleIdx + 1] = clamp(particleDiffusionColors[3 * particleIdx + 1] - resetRate, 0, 255);
-    particleDiffusionColors[3 * particleIdx + 2] = clamp(particleDiffusionColors[3 * particleIdx + 2] + resetRate, 0, 255);
+    // fade each channel toward the base water color
+    for (int k = 0; k < 3; ++k) {
+        float &ch = particleDiffusionColors[3 * particleIdx + k];
+        const float target = baseColor[k];
+        if (ch < target)      ch = std::min(ch + resetRate, target);
+        else if (ch > target) ch = std::max(ch - resetRate, target);
+    }
 
     const int xi = clamp(std::floor(fluid_attributes.positions[2 * particleIdx] * invSpacing), 1, fluid_attributes.numX - 1);
     const int yi = clamp(std::floor(fluid_attributes.positions[2 * particleIdx + 1] * invSpacing), 1, fluid_attributes.numY - 1);
@@ -182,9 +242,7 @@ void FluidRenderer::GetParticleDiffusionColor(int particleIdx, int &r, int &g, i
     if (d0 > 0.f && fluid_attributes.particleAges[particleIdx] > fluid_attributes.age_constant - 1) {
         const float relDensity = this->fluid_attributes.cellDensities[cellNr] / d0;
         if (relDensity > 0 && relDensity < diffusionRatio) { 
-            particleDiffusionColors[3 * particleIdx] = 204;
-            particleDiffusionColors[3 * particleIdx + 1] = 204;
-            particleDiffusionColors[3 * particleIdx + 2] = 255;
+            for (int k = 0; k < 3; ++k) particleDiffusionColors[3 * particleIdx + k] = foamColor[k];
         }
     }
 
@@ -373,6 +431,29 @@ void FluidRenderer::DrawParticles() {
 
 
 
+void FluidRenderer::DrawFluidSmooth() {
+    // same transform you already use, scaled to the smaller target
+    Matrix m = MatrixMultiply(fluid_attributes.frame_context.transform,
+                              MatrixScale(fieldScale, fieldScale, 1.f));
+
+    BeginTextureMode(fieldRT);
+        ClearBackground(BLANK);
+        rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_ADD);   // pure additive, including alpha
+        BeginBlendMode(BLEND_CUSTOM);
+            particleMesh.DrawQuads(blobMaterial, m);
+        EndBlendMode();
+    EndTextureMode();
+
+    BeginShaderMode(compositeShader);
+        DrawTexturePro(fieldRT.texture,
+                       {0, 0, (float)fieldRT.texture.width, -(float)fieldRT.texture.height},
+                       {0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()},
+                       {0, 0}, 0.f, WHITE);
+    EndShaderMode();
+}
+
+
+
 void FluidRenderer::render_fluid() {
     float alpha = CalculateInterpolation();
     InterpolatePositions(alpha);
@@ -385,6 +466,7 @@ void FluidRenderer::render_fluid() {
     particleMesh.UpdateColorMeshBuffers(particleColors);
 
     DrawParticles();
+    //DrawFluidSmooth();
 
     std::copy(begin(fluid_attributes.positions), end(fluid_attributes.positions), begin(fluid_attributes.renderPositions));
     //std::fill(begin(fluid_attributes.debug), end(fluid_attributes.debug), false);
@@ -398,4 +480,122 @@ void FluidRenderer::setRenderMode(int newMode) {
 
 int FluidRenderer::getRenderMode() {
     return renderMode;
+}
+
+int FluidRenderer::getColorOverlap() {
+    return colorOverlap;
+}
+
+void FluidRenderer::setColorOverlap(int set) {
+    // strength is a tint, applied in float math by the shader, so low values keep full precision
+    colorOverlap = (unsigned char)clamp(set, 1, 255);
+    blobMaterial.maps[MATERIAL_MAP_DIFFUSE].color = Color{colorOverlap, colorOverlap, colorOverlap, colorOverlap};
+}
+
+// Smooth metaball kernel k(r) = (1 - r^2)^power, written to rgb and alpha at full range.
+// It reaches exactly zero at the sprite edge, so neighboring blobs merge with smooth necks.
+Image FluidRenderer::MakeBlobImage() {
+    const int S = 64;
+    Image img = GenImageColor(S, S, BLANK);
+    Color *px = (Color *)img.data;
+    for (int y = 0; y < S; ++y) {
+        for (int x = 0; x < S; ++x) {
+            const float fx = (x + 0.5f) / S * 2.f - 1.f;
+            const float fy = (y + 0.5f) / S * 2.f - 1.f;
+            const float r2 = fx * fx + fy * fy;
+            const float k = r2 < 1.f ? std::pow(1.f - r2, blobPower) : 0.f;
+            const unsigned char v = (unsigned char)std::lround(k * 255.f);
+            px[y * S + x] = Color{v, v, v, v};
+        }
+    }
+    return img;
+}
+
+// Rebuilds the kernel pixels in place (same size/format, so no new GPU texture is allocated).
+void FluidRenderer::RegenerateBlobTexture() {
+    Image img = MakeBlobImage();
+    UpdateTexture(blobTex, img.data);
+    UnloadImage(img);
+}
+
+// Field render target. Prefers a half-float color buffer so the accumulated field can exceed 1.0
+// (no clipped interiors or color shifts) and weak per-particle contributions aren't rounded away.
+// Falls back to the normal 8-bit target if the platform can't render to it.
+RenderTexture2D FluidRenderer::MakeFieldTarget(int w, int h) {
+    RenderTexture2D rt = LoadRenderTexture(w, h);
+
+    unsigned int fid = rlLoadTexture(NULL, w, h, RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16, 1);
+    if (fid != 0) {
+        rlFramebufferAttach(rt.id, fid, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
+        if (rlFramebufferComplete(rt.id)) {
+            rlUnloadTexture(rt.texture.id);   // drop the original RGBA8 buffer
+            rt.texture.id = fid;
+            rt.texture.format = RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16;
+            floatField = true;
+            SetTextureFilter(rt.texture, TEXTURE_FILTER_BILINEAR);
+            return rt;
+        }
+        // not renderable here: reattach the 8-bit buffer and carry on
+        rlFramebufferAttach(rt.id, rt.texture.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
+        rlUnloadTexture(fid);
+    }
+    floatField = false;
+    SetTextureFilter(rt.texture, TEXTURE_FILTER_BILINEAR);
+    return rt;
+}
+
+void FluidRenderer::UpdateTexelUniform() {
+    Vector2 texel = {1.f / fieldRT.texture.width, 1.f / fieldRT.texture.height};
+    SetShaderValue(compositeShader, texelLoc, &texel, SHADER_UNIFORM_VEC2);
+}
+
+// Recreates the field render target at a new resolution (scale of the screen size).
+void FluidRenderer::ResizeField(float scale) {
+    scale = clamp(scale, 0.1f, 1.f);
+    params[P_FIELD_SCALE] = scale;
+    if (scale == fieldScale) return;
+    fieldScale = scale;
+
+    UnloadRenderTexture(fieldRT);
+    fieldRT = MakeFieldTarget((int)(GetScreenWidth() * fieldScale), (int)(GetScreenHeight() * fieldScale));
+    UpdateTexelUniform();   // texel size depends on the target size
+}
+
+void FluidRenderer::setParam(int id, float v) {
+    if (id < 0 || id >= P_COUNT || !std::isfinite(v)) return;
+    params[id] = v;
+
+    if (id < P_SHADER_COUNT) {
+        SetShaderValue(compositeShader, paramLoc[id], &v, SHADER_UNIFORM_FLOAT);
+        return;
+    }
+
+    switch (id) {
+        case P_FIELD_SCALE:     ResizeField(v); break;
+        case P_BLOB_POWER:
+            blobPower = clamp(v, 0.5f, 8.f);
+            params[id] = blobPower;
+            RegenerateBlobTexture();
+            break;
+        case P_RESET_RATE:      resetRate = v; break;
+        case P_DIFFUSION_RATIO: diffusionRatio = v; break;
+        case P_BASE_R: case P_BASE_G: case P_BASE_B: baseColor[id - P_BASE_R] = v; break;
+        case P_FOAM_R: case P_FOAM_G: case P_FOAM_B: foamColor[id - P_FOAM_R] = v; break;
+        default: break;
+    }
+}
+
+float FluidRenderer::getParam(int id) const {
+    if (id < 0 || id >= P_COUNT) return 0.f;
+    return params[id];
+}
+
+float FluidRenderer::getRadiusMul() {
+    return radiusMul;
+}
+
+void FluidRenderer::setRadiusMult(float set) {
+    radius = radius / radiusMul;
+    radiusMul = set;
+    radius = radius * radiusMul;
 }

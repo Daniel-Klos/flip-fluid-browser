@@ -10,6 +10,7 @@ ObstacleRenderer::ObstacleRenderer(FluidState &fas): fluid_attributes(fas) {
     simPos = {0, 0};
     pencilPositionChanged = false;
     pencilSizeChanged = false;
+    pencilSizeLimit = std::max(fluid_attributes.getNumX(), fluid_attributes.getNumY()) / 2;
 
     initializePencilTexture();
     changePencilRadius(1);
@@ -247,6 +248,8 @@ void ObstacleRenderer::UpdatePencilMeshColorMulti() {
 
 
 void ObstacleRenderer::changePencilRadius(int newRadius) {
+    newRadius = clamp(newRadius, 0, pencilSizeLimit);
+
     if (pencilRadius == newRadius) return;
 
     int oldDim = 2 * pencilRadius + 1;

@@ -132,33 +132,40 @@ struct FluidState {
         //debug.resize(num_particles);
         
         // initializing particle positions
-        float separation = 2.1; 
+        float separation = 2.1f; 
 
-        int wideNum = std::floor((frame_context.WIDTH - 2 * cellSpacing - 2) / (radius * 2.1));
-        int highNum = num_particles / wideNum;
+        float spacing = radius * separation;
 
-        float starting_px = radius + cellSpacing + 2;
-        float starting_py = radius + cellSpacing;
+        float W = frame_context.WIDTH;
+        float H = frame_context.HEIGHT;
 
-        float px = starting_px;
-        float py = starting_py;
+        // Two columns, each occupying 25% of the width
+        float columnWidth = W * 0.25f;
 
-        int addTo = num_particles - (wideNum * highNum);
+        float leftX = cellSpacing + radius + 2.0f;
+        float rightX = W - cellSpacing - columnWidth - radius - 2.0f;
+        float topY = H - cellSpacing + radius;
 
-        bool offset = true;
-        for (int i = 0; i < wideNum * highNum + addTo; ++i) {
-            this->positions[i * 2] = px;
-            this->positions[i * 2 + 1] = py;
+        int cols = std::max(1, (int)std::floor(columnWidth / spacing));
 
-            px += this->radius * separation;
+        int placed = 0;
 
-            if ((i + 1) % wideNum == 0) {
-                px = starting_px;
-                if (offset) {
-                    px += this->radius;
+        for (int row = 0; placed < num_particles; ++row) {
+            float y = topY - row * spacing;
+        
+            // Alternate rows for staggered packing
+            float offset = (row % 2) * radius;
+        
+            for (int col = 0; col < cols && placed < num_particles; ++col) {
+                float x = col * spacing + offset;
+            
+                for (int side = 0; side < 2 && placed < num_particles; ++side) {
+                    float px = (side == 0 ? leftX : rightX) + x;
+                
+                    positions[placed * 2] = px;
+                    positions[placed * 2 + 1] = y;
+                    ++placed;
                 }
-                py += this->radius * separation;
-                offset = !offset;
             }
         }
     }

@@ -584,7 +584,7 @@ public:
         if ((fas.activeTool == Tool::AttractObject) ||  (fas.activeTool == Tool::RepelObject) ||  (fas.activeTool == Tool::DragObject)) {
             drawCircleObject();
         }
-        else if (fas.activeTool == Tool::SpawnObject) {
+        else if (fas.activeTool == Tool::SpawnObject || fas.activeTool == Tool::DeleteObject) {
             drawSquareObject();
         }
     }

@@ -85,6 +85,6 @@ struct ObstacleRenderer {
     int pencilColor;
     bool pencilPositionChanged;
     bool pencilSizeChanged;
-
+    int pencilSizeLimit;
 
 };

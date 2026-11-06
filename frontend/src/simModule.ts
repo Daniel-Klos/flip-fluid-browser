@@ -24,6 +24,12 @@ export type SimModule = {
   _getBrushSize(): number;
   _setForceStrength(v: number): void;
   _getForceStrength(): number;
+  _setColorOverlap(v: number): void;
+  _getColorOverlap(): number;
+  _setRadiusMul(v: number): void;
+  _getRadiusMul(): number;
+  _setRenderParam(id: number, v: number): void;
+  _getRenderParam(id: number): number;
 };
 
 declare global {

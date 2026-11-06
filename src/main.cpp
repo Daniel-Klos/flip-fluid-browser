@@ -107,7 +107,8 @@ extern "C" {
     }
     EMSCRIPTEN_KEEPALIVE
     void setBrushSize(float v) {
-        g_scene_handler->fluid_handler.setObjectRadius(v); 
+        g_scene_handler->fluid_handler.setObjectRadius(v);
+        g_scene_handler->obstacle_handler.setPencilRadius((int)v / 10);
     }
     EMSCRIPTEN_KEEPALIVE
     float getBrushSize() { 
@@ -128,6 +129,32 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     float getSurfaceTension() { 
         return g_scene_handler->fluid_handler.surface_tension.getSurfaceTension(); 
+    }
+    EMSCRIPTEN_KEEPALIVE
+    void setColorOverlap(float set) { 
+        g_scene_handler->fluid_handler.fluid_renderer.setColorOverlap(set);
+    }
+    EMSCRIPTEN_KEEPALIVE
+    float getColorOverlap() { 
+        return g_scene_handler->fluid_handler.fluid_renderer.getColorOverlap();
+    }
+    EMSCRIPTEN_KEEPALIVE
+    void setRadiusMul(float set) { 
+        g_scene_handler->fluid_handler.fluid_renderer.setRadiusMult(set);
+    }
+    EMSCRIPTEN_KEEPALIVE
+    float getRadiusMul() { 
+        return g_scene_handler->fluid_handler.fluid_renderer.getRadiusMul();
+    }
+    // Generic accessors for every live render setting (ids = FluidRenderer::RenderParam).
+    // One pair instead of ~30 near-identical exports; add a setting by extending the enum.
+    EMSCRIPTEN_KEEPALIVE
+    void setRenderParam(int id, float set) {
+        g_scene_handler->fluid_handler.fluid_renderer.setParam(id, set);
+    }
+    EMSCRIPTEN_KEEPALIVE
+    float getRenderParam(int id) {
+        return g_scene_handler->fluid_handler.fluid_renderer.getParam(id);
     }
 }
 
@@ -154,7 +181,7 @@ int main()
     float flipRatio = 0.3f; // 0.9f
     float apicRatio = 1.f;
     float vorticityStrength = 30.f;
-    float surfTenStrength = 20.f;
+    float surfTenStrength = 10.f;
     int maxFps = 120;
 
     SetTraceLogLevel(LOG_NONE);
